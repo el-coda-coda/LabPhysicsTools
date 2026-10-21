@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lab-physics-tools"
-version = "1.0.0"
-description = "Toolkit Python per fit chi-quadro, mappe 2D e tipografia scientifica per laboratori di fisica"
+version = "1.2.1"
+description = "Toolkit Python per fit chi-quadro, mappe 2D e tipografia scientifica per laboratori di fisica. (link github https://github.com/el-coda-coda/LabPhysicsTools.git)"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=1.20",
     "scipy>=1.7",
     "matplotlib>=3.5",
+    "iminuit>=2.0",
 ]
 
 [project.urls]
@@ -28,3 +29,6 @@ packages = ["src/LabPhysicsTools"]
 include = [
     "/src",
 ]
+
+[project.scripts]
+lab-physics-example = "LabPhysicsTools.cli_example:run"
