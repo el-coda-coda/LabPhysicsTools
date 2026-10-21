@@ -7,8 +7,6 @@ tacche 'inout' e griglie calibrate.
 
 from __future__ import annotations
 import math
-from pathlib import Path
-from typing import Optional, Union, Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -219,9 +217,6 @@ def disable_minor_ticks(ax: plt.Axes) -> None:
 
 if __name__ == "__main__":
     setup_academic_style()
-    
-    save_folder = Path(__file__).resolve().parent / "examples"
-    save_folder.mkdir(parents=True, exist_ok=True)
 
     # Modello comune per Esempio 1 ed Esempio 2
     A_true = 4.5e4
@@ -265,9 +260,6 @@ if __name__ == "__main__":
 
     ax.legend(loc="upper right", frameon=True, fancybox=False, facecolor="white", edgecolor="black", framealpha=1.0, borderpad=0.4, handlelength=1.4)
     fig.tight_layout(pad=0.3)
-    fig.savefig(save_folder / "example_1_gaussian_scatter.pdf", dpi=300, bbox_inches="tight", pad_inches=0.08)
-    print("Grafico 1 salvato.")
-
 
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 7: Gaussiana + Pannello Residui
@@ -318,9 +310,6 @@ if __name__ == "__main__":
 
     ax_main.legend(loc="upper right", frameon=True, fancybox=False, facecolor="white", edgecolor="black", framealpha=1.0, borderpad=0.4, handlelength=1.4)
     fig.tight_layout(pad=0.25)
-    fig.savefig(save_folder / "example_2_gaussian_residuals.pdf", dpi=300, bbox_inches="tight", pad_inches=0.08)
-    print("Grafico 2 salvato.")
-
 
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 8: Diagramma di Bode Modulo + Residui (Semilogaritmico)
@@ -371,9 +360,6 @@ if __name__ == "__main__":
 
     ax_main.legend(loc="lower left", frameon=True, fancybox=False, facecolor="white", edgecolor="black", framealpha=1.0, borderpad=0.4, handlelength=1.4)
     fig.tight_layout(pad=0.25)
-    fig.savefig(save_folder / "example_3_log_residuals.pdf", dpi=300, bbox_inches="tight", pad_inches=0.08)
-    print("Grafico 3 salvato.")
-
 
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 9: Grafico Log-Log Puro
@@ -405,7 +391,5 @@ if __name__ == "__main__":
 
     ax.legend(loc="upper right", frameon=True, fancybox=False, facecolor="white", edgecolor="black", framealpha=1.0, borderpad=0.4, handlelength=1.4)
     fig.tight_layout(pad=0.3)
-    fig.savefig(save_folder / "example_4_scatter_log_both_axes.pdf", dpi=300, bbox_inches="tight", pad_inches=0.08)
-    print("Grafico 4 salvato.")
 
     plt.show()

@@ -500,10 +500,6 @@ class GlobalFitPipeline:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    current_dir = Path(__file__).resolve().parent
-    save_folder = current_dir / "examples"
-    save_folder.mkdir(parents=True, exist_ok=True)
-
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 1: Oscillatore smorzato ad alta frequenza
     # ──────────────────────────────────────────────────────────────────────────────
@@ -537,8 +533,6 @@ if __name__ == "__main__":
     ax2.errorbar(t, res1.residui, yerr=s_y, fmt='.', alpha=0.4)
     ax2.axhline(0, color='r', ls='--'); ax2.set_ylabel('residui'); ax2.set_xlabel('t [s]')
     fig1.tight_layout()
-    fig1.savefig(save_folder / "example_1_fit_pipeline.pdf", dpi=300, bbox_inches="tight")
-    print("\nGrafico Esempio 1 salvato.")
 
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 2: Confronto ODR Newton vs ODR Linearizzato
@@ -604,9 +598,6 @@ if __name__ == "__main__":
     ax_bot.set_xlabel("x")
     ax_bot.legend()
     fig2.tight_layout()
-    fig2.savefig(save_folder / "example_2_odr_difference_fit.pdf", dpi=300, bbox_inches="tight")
-
-    print("Grafico Esempio 2 salvato.")
     
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 3: Retta di calibrazione con errori su x e y
@@ -658,7 +649,6 @@ if __name__ == "__main__":
     ax2.set_xlabel("Grandezza applicata $x$ [u.a.]")
     ax2.set_xlabel("Grandezza applicata $x$ [u.a.]")
     fig3.tight_layout()
-    fig3.savefig(save_folder / "example_3_linear_fit.pdf", dpi=300, bbox_inches="tight")
 
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 4: Picco Gaussiano con Fondo
@@ -710,7 +700,6 @@ if __name__ == "__main__":
     ax2.set_ylabel("Pulls [$\\sigma$]")
     ax2.set_xlabel("Canale energetico $x$ [keV]")
     fig4.tight_layout()
-    fig4.savefig(save_folder / "example_4_gussian_fit.pdf", dpi=300, bbox_inches="tight")
     
     # ──────────────────────────────────────────────────────────────────────────────
     # ESEMPIO 5: Stress-Test e recupero automatico da p0 sballati
@@ -758,7 +747,6 @@ if __name__ == "__main__":
     ax.set_ylabel("y")
     ax.legend()
     fig5.tight_layout()
-    fig5.savefig(save_folder / "example_5_global_guess_parameters_recovery.pdf", dpi=300, bbox_inches="tight")
 
     print("\nTutti gli esempi sono stati eseguiti e salvati correttamente.")
     plt.show()

@@ -9,3 +9,4 @@ LabPhysicsTools è una libreria Python sviluppata per semplificare, standardizza
 6. Tipografia e Visualizzazione Scientifica (plot_typo): layout coerenti per figure a singolo e doppio pannello (es. dato sperimentale + pannello dei residui normalizzati), gestione avanzata delle scale lineari e logaritmiche con spaziatura e griglie ad alta leggibilità, configurazione tipografica integrata con gli standard di impaginazione accademica (font sizing, etichette asse e formattazione LaTeX-ready).   
 
 Repository: https://github.com/el-coda-coda/LabPhysicsTools.git
+Pyp: https://pypi.org/project/lab-physics-tools/
