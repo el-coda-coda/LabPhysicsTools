@@ -1,0 +1,24 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging & Build
+dist/
+build/
+*.egg-info/
+
+# LaTeX ausiliari (mantieni i .tex e i .pdf finali)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+Pyp_token.txt
+
+# Ambienti virtuali
+.venv/
+venv/
+env/

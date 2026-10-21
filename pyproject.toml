@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lab-physics-tools"
+version = "0.1.0"
+description = "Toolkit Python per fit chi-quadro, mappe 2D e tipografia scientifica per laboratori di fisica"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Andrea Codarin" }
+]
+dependencies = [
+    "numpy>=1.20",
+    "scipy>=1.7",
+    "matplotlib>=3.5",
+]
+
+[project.urls]
+"Source" = "https://github.com/el-coda-coda/LabPhysicsTools.git"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lab_physics"]
