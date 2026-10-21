@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lab-physics-tools"
-version = "1.2.2"
+version = "1.2.3"
 description = "Toolkit Python per fit chi-quadro, mappe 2D e tipografia scientifica per laboratori di fisica."
 readme = "README.md"
 requires-python = ">=3.9"

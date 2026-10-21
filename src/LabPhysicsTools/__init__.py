@@ -6,4 +6,4 @@ from .chi_squared_fit import *
 from .chi_squared_2d_map import *
 from .plot_typo import *
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
