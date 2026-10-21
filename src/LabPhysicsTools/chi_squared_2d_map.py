@@ -1,65 +1,23 @@
 import math
 from typing import Optional, Tuple, List, Union, Dict, Any
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
+import matplotlib.ticker as ticker
 from scipy import ndimage
 from iminuit import Minuit
-import sys
-from pathlib import Path
 import matplotlib.patheffects as patheffects
 
-typo_params = {
-    "textsize" : 12,
-    "labelsize" : 12,
-    "ticksize" : 10,
-    "legendsize" : 10,
-    "titlesize" : 12,
-    "width" : 10,
-    "height" : 10
-}
-
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",
-    "font.serif": ["Palatino", "URW Palladio L", "TeX Gyre Pagella"],
-    # Pacchetti LaTeX per formule e testo in Palatino coerente
-    "text.latex.preamble": r"""
-        \usepackage{amsmath}
-        \usepackage{amssymb}
-        \usepackage{mathpazo}       % Font Palatino classico per testo e math
-        % In alternativa a mathpazo puoi usare i pacchetti moderni:
-        % \usepackage{newpxtext}
-        % \usepackage{newpxmath}
-    """,
-    # Dimensioni proporzionate del font
-    "font.size": typo_params["textsize"],
-    "axes.labelsize": typo_params["labelsize"],
-    "xtick.labelsize": typo_params["ticksize"],
-    "ytick.labelsize": typo_params["ticksize"],
-    "legend.fontsize": typo_params["legendsize"],
-    "figure.titlesize": typo_params["titlesize"],
-})
-
-# Importa FitPipeline direttamente dal tuo file chi_squared_fit.py
-CURRENT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = CURRENT_DIR.parent
-PATH_FIT_MODULE = PROJECT_ROOT / "chi_squared_fit"
-
-if str(PATH_FIT_MODULE) not in sys.path:
-    sys.path.insert(0, str(PATH_FIT_MODULE))
-
+# Importa SOLO la formattazione assi e le dimensioni standard da plot_typo
 try:
-    from labphysicstools.chi_squared_fit import FitPipeline, RisultatiFit
-except ModuleNotFounddError:
-    # Fallback se lo script viene eseguito direttamente dalla root di progetto
-    from LABORATORIO_FISICA_CODICE.chi_squared_fit.chi_squared_fit import FitPipeline, RisultatiFit
+    from .plot_typo import format_sci_axis, TYPO_CONFIG
+    from .chi_squared_fit import FitPipeline, RisultatiFit
+except ImportError:
+    from plot_typo import format_sci_axis, TYPO_CONFIG
+    from chi_squared_fit import FitPipeline, RisultatiFit
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Funzione per la generazione della Mappa Chi-Quadro Profilata (Metodo A)
-# ──────────────────────────────────────────────────────────────────────────────
 def chi2_map_pipeline(
     risultati: Any,
     param_x: str,
@@ -70,20 +28,24 @@ def chi2_map_pipeline(
     zoom_factor: int = 4,
     show_clabels: bool = True,
     manual_clabels: Union[bool, List[Tuple[float, float]]] = False,
-    clabel_fontsize: float = typo_params["legendsize"],
-    stats_box_loc: str = "inside_map",  # 'inside_map', 'top', o 'custom'
+    clabel_fontsize: Optional[float] = None,
+    stats_box_loc: str = "inside_map",
     stats_box_pos: Optional[Tuple[float, float]] = None,
     show_stats_box: bool = True,
-    spacing: float = 0.01,
+    spacing: float = 0.0,
     cmap: str = "viridis_r",
-    save_path: Optional[str] = None,
+    figsize: Optional[Tuple[float, float]] = None,  # Scegli la dimensione da fuori
+    save_path: Optional[Union[str, Path]] = None,
     show: bool = True,
-    colorbar_loc: str = "right",  # oppure "bottom"
+    colorbar_loc: str = "right",
 ) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]:
     """
-    Genera la mappa 2D profilata del Delta chi^2 per la coppia (param_x, param_y)
-    con profili 1D marginali e gestione elastica delle etichette.
+    Genera la mappa 2D profilata del Delta chi^2 per la coppia (param_x, param_y).
+    Usa TYPO_CONFIG per le dimensioni di font e tick, lasciando pieno controllo al modulo.
     """
+    if clabel_fontsize is None:
+        clabel_fontsize = TYPO_CONFIG["legendsize"]
+
     m: Minuit = risultati.minuit_obj
 
     # 1. Limiti e deviazioni
@@ -92,8 +54,8 @@ def chi2_map_pipeline(
 
     def _extract_err(param_name: str) -> float:
         if param_name in m.merrors:
-                me = m.merrors[param_name]
-                return max(abs(me.lower), abs(me.upper))
+            me = m.merrors[param_name]
+            return max(abs(me.lower), abs(me.upper))
         return m.errors[param_name]
 
     err_x = _extract_err(param_x)
@@ -103,7 +65,7 @@ def chi2_map_pipeline(
     y_min, y_max = y_val - n_sigma * err_y, y_val + n_sigma * err_y
     global_fval = float(m.fval)
 
-    # 2. Scansione profilata con Metodo A e Warm-Start sequenziale
+    # 2. Scansione profilata
     x_vals = np.linspace(x_min, x_max, grid_size)
     y_vals = np.linspace(y_min, y_max, grid_size)
     X_map, Y_map = np.meshgrid(x_vals, y_vals)
@@ -150,11 +112,13 @@ def chi2_map_pipeline(
 
     cbar_pad = 0.1
 
+    # 3. Layout e dimensione figura
     if colorbar_loc == "right":
-        fig = plt.figure(figsize=(8.2, 7.2))
+        actual_figsize = figsize if figsize is not None else (8.0, 7.0)
+        fig = plt.figure(figsize=actual_figsize)
         gs = gridspec.GridSpec(
-            2, 4, 
-            width_ratios=[3.5, 1.0, cbar_pad, 0.15], 
+            2, 4,
+            width_ratios=[3.5, 1.0, cbar_pad, 0.15],
             height_ratios=[1.0, 3.5]
         )
         gs.update(wspace=spacing, hspace=spacing)
@@ -166,14 +130,15 @@ def chi2_map_pipeline(
         cbar_orient = "vertical"
 
     elif colorbar_loc == "bottom":
-        fig = plt.figure(figsize=(7.5, 8.2))
+        actual_figsize = figsize if figsize is not None else (7.5, 8.0)
+        fig = plt.figure(figsize=actual_figsize)
         gs = gridspec.GridSpec(
-            4, 2, 
-            width_ratios=[3.5, 1.0], 
+            4, 2,
+            width_ratios=[3.5, 1.0],
             height_ratios=[1.0, 3.5, cbar_pad, 0.15]
         )
         gs.update(wspace=spacing, hspace=spacing)
-        
+
         ax1  = fig.add_subplot(gs[1, 0])
         ax_t = fig.add_subplot(gs[0, 0], sharex=ax1)
         ax_r = fig.add_subplot(gs[1, 1], sharey=ax1)
@@ -181,7 +146,8 @@ def chi2_map_pipeline(
         cbar_orient = "horizontal"
 
     else:
-        fig = plt.figure(figsize=(7.5, 7.5))
+        actual_figsize = figsize if figsize is not None else (7.0, 7.0)
+        fig = plt.figure(figsize=actual_figsize)
         gs = gridspec.GridSpec(2, 2, width_ratios=[3.5, 1.0], height_ratios=[1.0, 3.5])
         gs.update(wspace=spacing, hspace=spacing)
         ax1  = fig.add_subplot(gs[1, 0])
@@ -189,49 +155,23 @@ def chi2_map_pipeline(
         ax_r = fig.add_subplot(gs[1, 1], sharey=ax1)
         cax  = None
 
-    # ── 4. Rendering Mappa con salvataggio oggetto ScalarMappable ─────────────
-    im = ax1.pcolormesh(
-        x_smooth, y_smooth, dz_smooth, 
-        shading='gouraud', cmap=cmap, vmax=25, rasterized=True
-    )
+    # 4. Rendering Mappa e Contorni
+    im = ax1.pcolormesh(x_smooth, y_smooth, dz_smooth, shading='gouraud', cmap=cmap, vmax=25, rasterized=True)
 
-    # 4. Mappa 2D e contorni
-    ax1.pcolormesh(x_smooth, y_smooth, dz_smooth, shading='gouraud', cmap=cmap, vmax=25, rasterized=True)
-
-    cs_2d = ax1.contour(
-        x_smooth, y_smooth, dz_smooth,
-        levels=[2.30, 6.18, 11.83],
-        colors=['white', 'white', 'white'],
-        linewidths=[1.6, 1.2, 0.9],
-        linestyles=['-', '--', ':']
-    )
-    cs_1d = ax1.contour(
-        x_smooth, y_smooth, dz_smooth,
-        levels=[1.00],
-        colors=["#000000"],
-        linewidths=[1.1],
-        linestyles=['-.']
-    )
+    cs_2d = ax1.contour(x_smooth, y_smooth, dz_smooth, levels=[2.30, 6.18, 11.83], colors=['white', 'white', 'white'], linewidths=[1.6, 1.2, 0.9], linestyles=['-', '--', ':'])
+    cs_1d = ax1.contour(x_smooth, y_smooth, dz_smooth, levels=[1.00], colors=["#000000"], linewidths=[1.1], linestyles=['-.'])
 
     if show_clabels:
         labels_dict = {2.30: r'$1\sigma_{2D}$', 6.18: r'$2\sigma_{2D}$', 11.83: r'$3\sigma_{2D}$', 1.00: r'$1\sigma_{1D}$'}
         fmt_clabel = lambda v: labels_dict.get(round(v, 2), f"{v:.1f}")
-        clabel_opts = dict(
-                    inline=True,
-                    fontsize=clabel_fontsize,
-                    fmt=fmt_clabel,
-                    manual=manual_clabels,
-                    inline_spacing=5,
-                    colors="black",
-                )
+        clabel_opts = dict(inline=True, fontsize=clabel_fontsize, fmt=fmt_clabel, manual=manual_clabels, inline_spacing=5, colors="black")
         halo = [patheffects.withStroke(linewidth=2.5, foreground="white")]
         clbl_2d = ax1.clabel(cs_2d, **clabel_opts)
         plt.setp(clbl_2d, path_effects=halo)
-
         clbl_1d = ax1.clabel(cs_1d, **clabel_opts)
         plt.setp(clbl_1d, path_effects=halo)
 
-    # 5. Profili 1D marginali Minos
+    # 5. Profili 1D marginali
     ax1.plot(x_val, y_val, marker='+', markersize=10, color='red', mew=2.0, zorder=5)
 
     for p_name, ax_proj, is_x in [(param_x, ax_t, True), (param_y, ax_r, False)]:
@@ -252,62 +192,63 @@ def chi2_map_pipeline(
 
     ax_t.axhline(1.0, color='green', ls='--', lw=1.2)
     ax_r.axvline(1.0, color='green', ls='--', lw=1.2)
-    
+
     xp, yp = m.mnprofile(param_x, size=100, bound=(x_min, x_max))[:2]
     ax_t.plot(xp, yp - global_fval, color="black", lw=1.6)
-    
+
     xp2, yp2 = m.mnprofile(param_y, size=100, bound=(y_min, y_max))[:2]
     ax_r.plot(yp2 - global_fval, xp2, color="black", lw=1.6)
-    
+
+    # Griglie semplici
+    ax_t.grid(True, ls=':', color='gray', alpha=0.5)
+    ax_r.grid(True, ls=':', color='gray', alpha=0.5)
+
+    ax_t.tick_params(axis='x', labelbottom=False)
+    ax_r.tick_params(axis='y', labelleft=False)
+    ax_t.set_yticks([0, 1, 2, 4])
+    ax_r.set_xticks([0, 1, 2, 4])
+
     if cax is not None:
         cbar = fig.colorbar(im, cax=cax, orientation=cbar_orient)
-        cbar.set_label(r'$\Delta\chi^2$', fontsize=typo_params["labelsize"])
-        cbar.ax.tick_params(direction='inout', length=5, width=0.8)
-        
-        # Tacche discrete sulla colorbar coerenti con i livelli significativi
+        cbar.set_label(r'$\Delta\chi^2$', fontsize=TYPO_CONFIG["labelsize"])
+        cbar.ax.tick_params(labelsize=TYPO_CONFIG["ticksize"], length=TYPO_CONFIG["major_tick_len"]*0.7, width=TYPO_CONFIG["major_tick_width"])
         cbar.set_ticks([0, 2.30, 6.18, 11.83, 20])
         cbar.set_ticklabels(['0', r'$1\sigma_{2D}$', r'$2\sigma_{2D}$', r'$3\sigma_{2D}$', '20'])
 
-    # 6. Formattazione assi
-    def _sci_label(ax, vals, nome, axis_letter):
-        base = param_info[nome].get('label', nome) if (param_info and nome in param_info) else nome
-        unit = param_info[nome].get('unit', '') if (param_info and nome in param_info) else ''
-        amax = np.max(np.abs(vals))
-        esp = int(math.floor(math.log10(amax))) if amax > 0 else 0
-        scale = 10**esp
-        suffix = (rf"\, [$\times 10^{{{esp}}}$ {unit}]" if esp != 0 else (f"\, [{unit}]" if unit else ""))
-        fmt = ticker.FuncFormatter(lambda v, _: f"{v / scale:.2f}")
-        getattr(ax, f"{axis_letter}axis").set_major_formatter(fmt)
-        return f"{base}{suffix}"
+    # 6. Formattazione assi con plot_typo.format_sci_axis
+    lbl_x = param_info[param_x].get('label', param_x) if (param_info and param_x in param_info) else param_x
+    unit_x = param_info[param_x].get('unit', '') if (param_info and param_x in param_info) else ''
+    ax1.set_xlabel(format_sci_axis(ax1, [x_min, x_max], lbl_x, axis="x", unit=unit_x), fontsize=TYPO_CONFIG["labelsize"])
 
-    ax1.set_xlabel(_sci_label(ax1, [x_min, x_max], param_x, 'x'))
-    ax1.set_ylabel(_sci_label(ax1, [y_min, y_max], param_y, 'y'))
-    ax_t.set_ylabel(r"$\Delta\chi^2$")
-    ax_r.set_xlabel(r"$\Delta\chi^2$")
+    lbl_y = param_info[param_y].get('label', param_y) if (param_info and param_y in param_info) else param_y
+    unit_y = param_info[param_y].get('unit', '') if (param_info and param_y in param_info) else ''
+    ax1.set_ylabel(format_sci_axis(ax1, [y_min, y_max], lbl_y, axis="y", unit=unit_y), fontsize=TYPO_CONFIG["labelsize"])
 
+    ax_t.set_ylabel(r"$\Delta\chi^2$", fontsize=TYPO_CONFIG["labelsize"])
+    ax_r.set_xlabel(r"$\Delta\chi^2$", fontsize=TYPO_CONFIG["labelsize"])
+
+    # Limiti esatti
     ax1.set_xlim(x_min, x_max)
     ax1.set_ylim(y_min, y_max)
     ax_t.set_ylim(0, 5.5)
     ax_r.set_xlim(0, 5.5)
 
-    ax1.tick_params(axis='both', which='both', labelbottom=True, labelleft=True, right=True, top=True)
-    ax_t.tick_params(axis='x', bottom=True, labelbottom=False)
-    ax_r.tick_params(axis='y', left=True, labelleft=False)
-    ax_t.set_yticks([0, 1, 2, 4])
-    ax_r.set_xticks([0, 1, 2, 4])
-
-    for ax_m in [ax_t, ax_r]:
-        ax_m.grid(True, ls=':', color='gray', alpha=0.5)
-        
+    # ── APPLICAZIONE DIMENSIONI E LUNGHEZZA TICKS DA TYPO_CONFIG ─────────
     for ax in [ax1, ax_t, ax_r]:
         ax.tick_params(
-            axis='both',
-            which='both',
-            direction='inout', 
-            length=8,          
-            width=1,
-            color='black'
+            axis="both",
+            labelsize=TYPO_CONFIG["ticksize"],
+            length=TYPO_CONFIG["major_tick_len"],
+            width=TYPO_CONFIG["major_tick_width"],
+            direction="inout",
+            top=True,
+            right=True
         )
+
+    # ── ELIMINAZIONE PULITA DEI TICK SUI BORDI CONDIVISI ─────────────────
+    # prune='upper' rimuove l'ultimo tick senza mai toccare le etichette o rompere i formati
+    ax1.yaxis.set_major_locator(ticker.MaxNLocator(nbins=6, prune="upper"))
+    ax1.xaxis.set_major_locator(ticker.MaxNLocator(nbins=6, prune="upper"))
 
     # 7. Box Statistiche
     if show_stats_box:
@@ -324,17 +265,17 @@ def chi2_map_pipeline(
 
         cv_s, cv_e = _fmt_sci(cov_val)
         cov_tex = rf"{cv_s} \times 10^{{{cv_e}}}" if cv_e != 0 else cv_s
-        box_kw = dict(boxstyle='square,pad=0.3', facecolor='white', alpha=1, edgecolor='black', lw=0.6)
+        box_kw = dict(boxstyle='square,pad=0.3', facecolor='white', alpha=1.0, edgecolor='black', lw=0.6)
 
         if stats_box_loc == "inside_map":
-            txt = rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}$" + "\n" + rf"$\rho_{{{lx},{ly}}} = {corr_val:+.3f}$"
-            ax1.text(0.96, 0.96, txt, transform=ax1.transAxes, fontsize=typo_params["textsize"], ha='right', va='top', bbox=box_kw, zorder=10)
+            ax1.text(0.96, 0.96, rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}$" + "\n" + rf"$\rho_{{{lx},{ly}}} = {corr_val:+.3f}$",
+                     transform=ax1.transAxes, fontsize=TYPO_CONFIG["textsize"], ha='right', va='top', bbox=box_kw, zorder=10)
         elif stats_box_loc == "top":
-            txt = rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}\quad\rho_{{{lx},{ly}}} = {corr_val:+.3f}$"
-            ax_t.text(0.5, 1.15, txt, transform=ax_t.transAxes, fontsize=typo_params["textsize"], ha='center', va='bottom', bbox=box_kw)
+            ax_t.text(0.5, 1.15, rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}\quad\rho_{{{lx},{ly}}} = {corr_val:+.3f}$",
+                      transform=ax_t.transAxes, fontsize=TYPO_CONFIG["textsize"], ha='center', va='bottom', bbox=box_kw)
         elif stats_box_loc == "custom" and stats_box_pos is not None:
-            txt = rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}$" + "\n" + rf"$\rho_{{{lx},{ly}}} = {corr_val:+.3f}$"
-            fig.text(stats_box_pos[0], stats_box_pos[1], txt, fontsize=typo_params["textsize"], bbox=box_kw)
+            fig.text(stats_box_pos[0], stats_box_pos[1], rf"$\mathrm{{Cov}}({lx}, {ly}) = {cov_tex}$" + "\n" + rf"$\rho_{{{lx},{ly}}} = {corr_val:+.3f}$",
+                     fontsize=TYPO_CONFIG["textsize"], bbox=box_kw)
 
     fig.tight_layout(pad=0.5)
 
@@ -349,73 +290,39 @@ def chi2_map_pipeline(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Test del flusso completo (Generazione Dati -> Fit ODR Metodo A -> Mappa 2D)
+# Test del flusso completo
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    
-    # ──────────────────────────────────────────────────────────────────────────────
-    # ESEMPIO 10: Mappa 2D del chi quadro
-    # ──────────────────────────────────────────────────────────────────────────────
-    
-    # 1. Definizione del modello fisico
     def modello_lineare(x, m, q):
         return m * x + q
 
-    # 2. Generazione dati sintetici con errori su x e su y
     rng = np.random.default_rng(123)
     m_vero, q_vero = 2.45, 1.10
     n_punti = 35
 
     x_pulito = np.linspace(1.0, 10.0, n_punti)
     y_pulito = modello_lineare(x_pulito, m_vero, q_vero)
-
     err_x = np.full(n_punti, 0.20)
     err_y = np.full(n_punti, 0.45)
 
     x_misurato = x_pulito + rng.normal(0, err_x, n_punti)
     y_misurato = y_pulito + rng.normal(0, err_y, n_punti)
 
-    # 3. Esecuzione FitPipeline con Metodo A (odr_lin_Newton=True)
-    pipeline = FitPipeline(
-        model=modello_lineare,
-        param_names=["m", "q"],
-        p0=[1.0, 0.0],
-        run_minos=True,
-        verbose=True,
-    )
+    pipeline = FitPipeline(model=modello_lineare, param_names=["m", "q"], p0=[1.0, 0.0], run_minos=True, verbose=True)
+    risultati_fit = pipeline.fit(x=x_misurato, y=y_misurato, err_x=err_x, err_y=err_y, odr_lin_Newton=True)
 
-    risultati_fit = pipeline.fit(
-        x=x_misurato,
-        y=y_misurato,
-        err_x=err_x,
-        err_y=err_y,
-        odr_lin_Newton=True,  # Attiva il Metodo A privo di bias a varianza congelata
-    )
-
-    # 4. Generazione Mappa Delta-Chi2 con layout flessibile
     info_parametri = {
         "m": {"label": r"$m$", "unit": r"V/s"},
         "q": {"label": r"$q$", "unit": r"V"},
     }
 
-    current_dir = Path(__file__).resolve().parent
-    save_folder = current_dir / "examples"
-    save_folder.mkdir(parents=True, exist_ok=True)  # Crea la cartella se non esiste
-
-    print("\nGenerazione mappa 2D in corso...")
     fig, axes = chi2_map_pipeline(
         risultati=risultati_fit,
         param_x="m",
         param_y="q",
         param_info=info_parametri,
-        n_sigma=3.2,
-        grid_size=30,
+        figsize=(7.5, 6.5),
         stats_box_loc="custom",
-        stats_box_pos= (0.725,0.85),
-        show_clabels=True,
-        manual_clabels=False,
-        save_path=save_folder / "example_chi_squared_2d_map.pdf",
-        show=True,
-        cmap="viridis_r",
-        spacing=0,
+        stats_box_pos=(0.725, 0.85),
+        show=True
     )

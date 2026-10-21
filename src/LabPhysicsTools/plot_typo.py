@@ -13,18 +13,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
+# ──────────────────────────────────────────────────────────────────────────────
+# 1. Impostazione tipografica
+# ──────────────────────────────────────────────────────────────────────────────
 
-# ──────────────────────────────────────────────────────────────────────────────
-# 1. Configurazione Tipografica Globale (Palatino + LaTeX)
-# ──────────────────────────────────────────────────────────────────────────────
+# Parametri dimensionali standard condivisi tra i moduli
+TYPO_CONFIG = {
+    "textsize": 11.0,
+    "labelsize": 11.5,
+    "ticksize": 10.0,
+    "legendsize": 9.5,
+    "titlesize": 11.5,
+    "major_tick_len": 6.0,
+    "major_tick_width": 0.8,
+    "minor_tick_len": 3.5,
+    "minor_tick_width": 0.5,
+}
+
+
 def setup_academic_style(
     textsize: float = 11.0,
     labelsize: float = 11.5,
     ticksize: float = 10.0,
     legendsize: float = 9.5,
     titlesize: float = 11.5,
+    major_tick_len: float = 6.0,
+    major_tick_width: float = 0.8,
+    minor_tick_len: float = 3.5,
+    minor_tick_width: float = 0.5,
 ) -> None:
-    """Configura i parametri rcParams di Matplotlib per l'estetica Palatino LaTeX."""
+    """Configura i parametri rcParams di Matplotlib per l'estetica Palatino LaTeX
+
+    e aggiorna il dizionario globale TYPO_CONFIG in memoria.
+    """
     plt.rcParams.update({
         "text.usetex": True,
         "font.family": "serif",
@@ -42,6 +63,18 @@ def setup_academic_style(
         "figure.titlesize": titlesize,
     })
 
+    # Aggiorna il dizionario sul posto: la modifica si propaga ovunque istantaneamente
+    TYPO_CONFIG.update({
+        "textsize": textsize,
+        "labelsize": labelsize,
+        "ticksize": ticksize,
+        "legendsize": legendsize,
+        "titlesize": titlesize,
+        "major_tick_len": major_tick_len,
+        "major_tick_width": major_tick_width,
+        "minor_tick_len": minor_tick_len,
+        "minor_tick_width": minor_tick_width,
+    })
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 2. Funzioni Helper Fondamentali per Assi e Tacche
@@ -74,12 +107,12 @@ def format_sci_axis(
         getattr(ax, f"{axis}axis").set_major_formatter(fmt)
 
         if unit_math:
-            suffix = rf"\, [$\times 10^{{{esp}}}\ {unit_math}$]"
+            suffix = rf" [$\times 10^{{{esp}}}\ {unit_math}$]"
         else:
-            suffix = rf"\, [$\times 10^{{{esp}}}$]"
+            suffix = rf" [$\times 10^{{{esp}}}$]"
         return f"{base_label}{suffix}"
 
-    suffix = rf"\, [${unit_math}$]" if unit_math else ""
+    suffix = rf" [${unit_math}$]" if unit_math else ""
     return f"{base_label}{suffix}"
 
 
@@ -87,34 +120,56 @@ def apply_academic_ticks_and_grid(
     ax: plt.Axes,
     scale_x: str = "linear",  # "linear" oppure "log"
     scale_y: str = "linear",  # "linear" oppure "log"
+    show_minor: bool = True,  # <--- Parametro per abilitare/disabilitare le tacche minori
     major_len: float = 8.0,
     minor_len: float = 4.0,
     major_width: float = 0.8,
     minor_width: float = 0.5,
 ) -> None:
-    """
-    Configura tacche 'inout' primarie e secondarie su tutti i 4 lati
-    e gestisce in modo indipendente griglie e formattazione per scale lineari o logaritmiche.
+    """Configura tacche 'inout' primarie e secondarie su tutti i 4 lati
+
+    e gestisce in modo indipendente griglie e formattazione per scale lineari o
+    logaritmiche.
     """
     # 1. Impostazione scale
     ax.set_xscale(scale_x)
     ax.set_yscale(scale_y)
 
-    # 2. Configurazione indipendente asse X
+    # 2. Configurazione asse X
     if scale_x == "log":
         ax.xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=15))
-        ax.xaxis.set_minor_locator(ticker.LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=15))
+        if show_minor:
+            ax.xaxis.set_minor_locator(
+                ticker.LogLocator(
+                    base=10.0, subs=np.arange(2, 10) * 0.1, numticks=15
+                )
+            )
+        else:
+            ax.xaxis.set_minor_locator(ticker.NullLocator())
         ax.xaxis.set_major_formatter(ticker.LogFormatterMathtext())
     else:
-        ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+        if show_minor:
+            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+        else:
+            ax.xaxis.set_minor_locator(ticker.NullLocator())
 
-    # 3. Configurazione indipendente asse Y
+    # 3. Configurazione asse Y
     if scale_y == "log":
         ax.yaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=15))
-        ax.yaxis.set_minor_locator(ticker.LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=15))
+        if show_minor:
+            ax.yaxis.set_minor_locator(
+                ticker.LogLocator(
+                    base=10.0, subs=np.arange(2, 10) * 0.1, numticks=15
+                )
+            )
+        else:
+            ax.yaxis.set_minor_locator(ticker.NullLocator())
         ax.yaxis.set_major_formatter(ticker.LogFormatterMathtext())
     else:
-        ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+        if show_minor:
+            ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+        else:
+            ax.yaxis.set_minor_locator(ticker.NullLocator())
 
     # 4. Parametri fisici delle tacche (centrate 'inout' su tutto il perimetro)
     ax.tick_params(
@@ -129,23 +184,38 @@ def apply_academic_ticks_and_grid(
         bottom=True,
         left=True,
     )
-    ax.tick_params(
-        axis="both",
-        which="minor",
-        direction="inout",
-        length=minor_len,
-        width=minor_width,
-        colors="black",
-        top=True,
-        right=True,
-        bottom=True,
-        left=True,
-    )
 
-    # 5. Griglia calibrata a doppio livello (tratteggiata major, punteggiata minor)
+    if show_minor:
+        ax.tick_params(
+            axis="both",
+            which="minor",
+            direction="inout",
+            length=minor_len,
+            width=minor_width,
+            colors="black",
+            top=True,
+            right=True,
+            bottom=True,
+            left=True,
+        )
+    else:
+        # Disabilita esplicitamente le tacche minori
+        ax.tick_params(axis="both", which="minor", length=0, width=0, left=False, right=False, top=False, bottom=False)
+
+    # 5. Griglia calibrata a doppio livello
     ax.grid(True, which="major", ls="--", lw=0.6, color="#cccccc", alpha=0.85)
-    ax.grid(True, which="minor", ls=":", lw=0.4, color="#e5e5e5", alpha=0.7)
+    if show_minor:
+        ax.grid(True, which="minor", ls=":", lw=0.4, color="#e5e5e5", alpha=0.7)
+    else:
+        ax.grid(False, which="minor")
 
+
+def disable_minor_ticks(ax: plt.Axes) -> None:
+    """Disabilita istantaneamente le tacche minori e la relativa griglia su entrambi gli assi."""
+    ax.xaxis.set_minor_locator(ticker.NullLocator())
+    ax.yaxis.set_minor_locator(ticker.NullLocator())
+    ax.tick_params(axis="both", which="minor", length=0, width=0, bottom=False, top=False, left=False, right=False)
+    ax.grid(False, which="minor")
 
 if __name__ == "__main__":
     setup_academic_style()
