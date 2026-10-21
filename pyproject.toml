@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "LabPhysicsTools"
-version = "0.1.0"
+name = "lab-physics-tools"
+version = "1.0.0"
 description = "Toolkit Python per fit chi-quadro, mappe 2D e tipografia scientifica per laboratori di fisica"
 readme = "README.md"
 requires-python = ">=3.9"

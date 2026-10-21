@@ -17,6 +17,7 @@ build/
 *.fls
 *.fdb_latexmk
 Pyp_token.txt
+Pyp_upload_commands.txt
 
 # Ambienti virtuali
 .venv/
